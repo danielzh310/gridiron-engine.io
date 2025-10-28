@@ -45,7 +45,7 @@ A model that generates weekly predictions for each NFL game, producing suggested
 ## Technical Scope  
 - **Tools & Libraries:** Python, nflreadpy, pandas, scikit-learn, NumPy, Matplotlib/Seaborn  
 - **Techniques:** Data clustering, regression modeling, classification metrics, feature engineering  
-- **Focus:** Predictive analytics for sports data — not gambling outcomes  
+- **Focus:** Predictive analytics for sports data, not gambling outcomes  
 
 ---
 
