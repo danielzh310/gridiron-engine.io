@@ -22,7 +22,7 @@ def run_weekly():
     print(f"Training on {len(train_df)} completed games")
 
     if predict_df.empty:
-        print("⚠️ No upcoming games found to predict — exiting safely.")
+        print("You suck at coding")
         return
 
     print(f"Predicting {len(predict_df)} upcoming games")
@@ -52,4 +52,4 @@ def run_weekly():
     print("Saving weekly picks...")
     results.to_csv(OUTPUT_PATH, index=False)
 
-    print("✅ Upcoming predictions complete.")
+    print("Predictions complete.")
