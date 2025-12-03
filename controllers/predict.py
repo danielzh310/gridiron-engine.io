@@ -1,10 +1,3 @@
-"""
-Weekly prediction pipeline:
-
-Loads NFL data, builds features, runs Moneyline, Spread, 
-and Total models, and exporting weekly picks to CSV.
-"""
-
 from data.loaders import load_weekly_data
 from data.preprocessing import build_features
 
@@ -12,36 +5,51 @@ from models.moneyline import Moneyline
 from models.spread import Spread
 from models.total import Total
 
-import pandas as pd
-
 
 OUTPUT_PATH = "outputs/weekly_picks.csv"
 
 
 def run_weekly():
-    print("Loading weekly data...")
+    print("Loading NFL data...")
     df = load_weekly_data()
 
-    print("Building features...")
-    features = build_features(df)
+    print("Building rolling features...")
+    feats = build_features(df)
 
-    print("Running models...")
+    train_df = feats[feats["home_score"].notna()].copy()
+    predict_df = feats[feats["home_score"].isna()].copy()
+
+    print(f"Training on {len(train_df)} completed games")
+
+    if predict_df.empty:
+        print("⚠️ No upcoming games found to predict — exiting safely.")
+        return
+
+    print(f"Predicting {len(predict_df)} upcoming games")
+
     ml = Moneyline()
     sp = Spread()
     tot = Total()
 
-    ml_preds = ml.predict(features)
-    sp_preds = sp.predict(features)
-    tot_preds = tot.predict(features)
+    ml.train(train_df)
+    sp.train(train_df)
+    tot.train(train_df)
 
-    print("Combining output...")
-    results = features[["game_id", "home_team", "away_team"]].copy()
+    print("Generating predictions...")
 
-    results = results.merge(ml_preds, on="game_id", how="left")
-    results = results.merge(sp_preds, on="game_id", how="left")
-    results = results.merge(tot_preds, on="game_id", how="left")
+    ml_preds = ml.predict(predict_df)
+    sp_preds = sp.predict(predict_df)
+    tot_preds = tot.predict(predict_df)
 
-    print("Saving output...")
+    print("Merging outputs...")
+
+    base = predict_df[["game_id", "home_team", "away_team"]].drop_duplicates("game_id")
+
+    results = base.merge(ml_preds, on="game_id")
+    results = results.merge(sp_preds, on="game_id")
+    results = results.merge(tot_preds, on="game_id")
+
+    print("Saving weekly picks...")
     results.to_csv(OUTPUT_PATH, index=False)
 
-    print("Weekly predictions generated")
+    print("✅ Upcoming predictions complete.")
