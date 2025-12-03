@@ -1,0 +1,3 @@
+game_id,home_team,away_team,moneyline_pick,home_win_prob,away_win_prob,spread_pick,spread_edge,total_pick,total_edge
+1,KC,CIN,HOME,0.55,0.45,HOME,3.2,OVER,4.1
+2,BUF,MIA,HOME,0.55,0.45,HOME,3.2,OVER,4.1
