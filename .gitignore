@@ -1,0 +1,13 @@
+# Python cache files
+__pycache__/
+*.pyc
+
+# Generated outputs
+outputs/*.csv
+
+# EDA images
+eda/figures/*.png
+
+# OS files
+.DS_Store
+Thumbs.db
