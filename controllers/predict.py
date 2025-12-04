@@ -9,7 +9,7 @@ from models.total import Total
 OUTPUT_PATH = "outputs/weekly_picks.csv"
 
 
-def run_weekly(season=2025, week=13):
+def run_weekly(season=2025, week=14):
     print("Loading NFL data...")
     df = load_weekly_data()
 
