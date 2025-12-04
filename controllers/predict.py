@@ -91,6 +91,8 @@ def run_weekly(season=2025, week=14):
         "ml_home_prob",
         "home_ml_bet",
         "away_ml_bet",
+        "home_moneyline",
+        "away_moneyline",
 
         "spread_pick",
         "model_spread_margin",

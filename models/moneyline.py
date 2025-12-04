@@ -1,4 +1,5 @@
 from xgboost import XGBClassifier
+from sklearn.linear_model import LogisticRegression
 import pandas as pd
 
 FEATURES = [
@@ -26,6 +27,7 @@ class Moneyline:
             eval_metric='logloss',
             random_state=42
         )
+        #self.model = LogisticRegression(max_iter=2000)
 
     def train(self, df):
         self.model.fit(df[FEATURES], df["home_win"])
@@ -55,4 +57,6 @@ class Moneyline:
             "moneyline_pick": picks.values,
             "home_ml_bet": home_ml_bet.values,
             "away_ml_bet": away_ml_bet.values,
+            "home_moneyline": df["home_moneyline"],
+            "away_moneyline": df["away_moneyline"],
         })
