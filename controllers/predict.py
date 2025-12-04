@@ -9,15 +9,26 @@ from models.total import Total
 OUTPUT_PATH = "outputs/weekly_picks.csv"
 
 
-def run_weekly():
+def run_weekly(season=2025, week=13):
     print("Loading NFL data...")
     df = load_weekly_data()
 
     print("Building rolling features...")
     feats = build_features(df)
 
-    train_df = feats[feats["home_score"].notna()].copy()
-    predict_df = feats[feats["home_score"].isna()].copy()
+    if season is not None and week is not None:
+        train_df = feats[
+            (feats["season"] < season) |
+            ((feats["season"] == season) & (feats["week"] < week))
+        ].copy()
+
+        predict_df = feats[
+            (feats["season"] == season) &
+            (feats["week"] == week)
+        ].copy()
+    else:
+        train_df = feats[feats["home_score"].notna()].copy()
+        predict_df = feats[feats["home_score"].isna()].copy()
 
     print(f"Training on {len(train_df)} completed games")
 

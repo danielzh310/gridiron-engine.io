@@ -1,5 +1,7 @@
 from sklearn.linear_model import Lasso
 from sklearn.preprocessing import StandardScaler
+from sklearn.impute import SimpleImputer
+
 import pandas as pd
 
 FEATURES = [
@@ -54,7 +56,11 @@ class Spread:
         X = self._build_model_matrix(df)
         Xs = self.scaler.transform(X)
         # model predicts edge; reconstruct margin
-        pred_edge = self.model.predict(Xs)
+        imputer = SimpleImputer(strategy="median")
+        Xs_clean = imputer.fit_transform(Xs)
+
+        pred_edge = self.model.predict(Xs_clean)
+
         spread = df["spread_line"].values[: len(pred_edge)]
         pred_margin = pred_edge + spread
         edges = pred_edge
