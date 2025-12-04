@@ -78,6 +78,8 @@ def run_weekly():
 
         "ml_pick",
         "ml_home_prob",
+        "home_ml_bet",
+        "away_ml_bet",
 
         "spread_pick",
         "model_spread_margin",
