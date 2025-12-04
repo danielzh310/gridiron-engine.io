@@ -1,4 +1,4 @@
-from sklearn.linear_model import LogisticRegression
+from xgboost import XGBClassifier
 import pandas as pd
 
 FEATURES = [
@@ -19,7 +19,13 @@ def ml_conversion(moneyline):
 
 class Moneyline:
     def __init__(self):
-        self.model = LogisticRegression(max_iter=1000)
+        self.model = XGBClassifier(
+            n_estimators=100,
+            max_depth=5,
+            learning_rate=0.1,
+            eval_metric='logloss',
+            random_state=42
+        )
 
     def train(self, df):
         self.model.fit(df[FEATURES], df["home_win"])
