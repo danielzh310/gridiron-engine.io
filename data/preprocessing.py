@@ -50,6 +50,7 @@ def build_features(df):
 
     teams["off_avg"] = (
         teams.groupby("team")["pts_for"]
+        .shift(1)
         .rolling(ROLLING_WINDOW)
         .mean()
         .reset_index(0, drop=True)
@@ -58,6 +59,7 @@ def build_features(df):
 
     teams["def_avg"] = (
         teams.groupby("team")["pts_against"]
+        .shift(1)
         .rolling(ROLLING_WINDOW)
         .mean()
         .reset_index(0, drop=True)
