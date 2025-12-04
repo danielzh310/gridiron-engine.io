@@ -5,6 +5,8 @@ def load_weekly_data(seasons=None):
     """
     Load NFL schedules for all historical seasons plus the current season
     so that both training games and upcoming games are included.
+    
+    Note: For the presentation, we will need to go back to Week 13
     """
 
     if seasons is None:

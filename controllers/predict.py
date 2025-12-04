@@ -31,25 +31,67 @@ def run_weekly():
     sp = Spread()
     tot = Total()
 
+    print("Training models...")
     ml.train(train_df)
     sp.train(train_df)
     tot.train(train_df)
 
     print("Generating predictions...")
-
     ml_preds = ml.predict(predict_df)
     sp_preds = sp.predict(predict_df)
     tot_preds = tot.predict(predict_df)
 
     print("Merging outputs...")
-
     base = predict_df[["game_id", "home_team", "away_team"]].drop_duplicates("game_id")
 
     results = base.merge(ml_preds, on="game_id")
     results = results.merge(sp_preds, on="game_id")
     results = results.merge(tot_preds, on="game_id")
 
-    print("Saving weekly picks...")
-    results.to_csv(OUTPUT_PATH, index=False)
+    print("Cleaning and formatting CSV output...")
 
-    print("Predictions complete.")
+    pretty = results.rename(columns={
+        "moneyline_pick": "ml_pick",
+        "home_win_prob": "ml_home_prob",
+        "predicted_margin": "model_spread_margin",
+        "predicted_total": "projected_total",
+        "total_edge": "vegas_total_edge",
+    })
+
+    round_cols = [
+        "ml_home_prob",
+        "model_spread_margin",
+        "spread_edge",
+        "projected_total",
+        "vegas_total_edge",
+        "total_low_q",
+        "total_high_q",
+        "total_buffer",
+    ]
+
+    pretty[round_cols] = pretty[round_cols].round(2)
+
+    ordered_cols = [
+        "game_id",
+        "home_team",
+        "away_team",
+
+        "ml_pick",
+        "ml_home_prob",
+
+        "spread_pick",
+        "model_spread_margin",
+        "spread_edge",
+
+        "total_pick",
+        "projected_total",
+        "vegas_total_edge",
+
+        "total_low_q",
+        "total_high_q",
+        "total_buffer",
+    ]
+
+    pretty[ordered_cols].to_csv(OUTPUT_PATH, index=False)
+
+    print("Weekly predictions generated.")

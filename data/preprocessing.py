@@ -5,8 +5,8 @@ ROLLING_WINDOW = 5
 
 def build_features(df):
     """
-    Build rolling offensive and defensive team features
-    for modeling moneyline, spread, and totals.
+    Build rolling offensive and defensive team features for modeling 
+    moneyline, spread, and totals.
     """
 
     data = df.copy()
