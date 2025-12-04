@@ -21,8 +21,8 @@ class Moneyline:
     def __init__(self):
         self.model = XGBClassifier(
             n_estimators=100,
-            max_depth=5,
-            learning_rate=0.1,
+            max_depth=3,
+            learning_rate=0.03,
             eval_metric='logloss',
             random_state=42
         )
