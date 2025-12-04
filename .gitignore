@@ -1,13 +1,13 @@
-# Python cache files
+# Python cache
 __pycache__/
 *.pyc
 
 # Generated outputs
 outputs/*.csv
 
-# EDA images
+# EDA visuals
 eda/figures/*.png
 
-# OS files
+# OS noise
 .DS_Store
 Thumbs.db

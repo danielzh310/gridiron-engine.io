@@ -25,6 +25,8 @@ def load_weekly_data(seasons=None):
         "away_score",
         "spread_line",
         "total_line",
+        "home_moneyline",
+        "away_moneyline",
     ]
 
     return schedules.select(keep).to_pandas()
