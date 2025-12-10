@@ -11,7 +11,7 @@ def load_weekly_data(seasons=None):
 
     if seasons is None:
         current_season = nfl.get_current_season()
-        seasons = list(range(2020, current_season + 1))
+        seasons = list(range(2022, current_season + 1))
 
     schedules = nfl.load_schedules(seasons=seasons)
 

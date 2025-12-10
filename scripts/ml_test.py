@@ -24,6 +24,7 @@ from xgboost import XGBClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import log_loss, accuracy_score, roc_auc_score
+import nflreadpy as nfl
 import pandas as pd
 import numpy as np
 
@@ -34,7 +35,26 @@ ML_FEATURES = [
     "away_off_avg",
     "home_def_avg",
     "away_def_avg",
+    "is_division_game",
 ]
+
+
+def add_division_features(df):
+    """Add division game indicators to dataframe."""
+    # Load teams data and convert to pandas
+    teams_df = nfl.load_teams().to_pandas()
+    team_divisions = teams_df.set_index('team_abbr')['team_division'].to_dict()
+    
+    data = df.copy()
+    
+    # Add division/conference for each team
+    data['home_division'] = data['home_team'].map(team_divisions)
+    data['away_division'] = data['away_team'].map(team_divisions)
+    
+    # Create binary features
+    data['is_division_game'] = (data['home_division'] == data['away_division']).astype(int)
+    
+    return data
 
 
 def build_ml_X(df):
@@ -72,7 +92,7 @@ def tune_xgb_classifier(train_df, n_folds=4):
     y_all = train_df["home_win"].values
 
     param_grid = {
-        "max_depth": [3, 4,5],
+        "max_depth": [3, 4, 5],
         "learning_rate": [0.1, 0.03, 0.05],
         "n_estimators": [100, 200],
     }
@@ -256,6 +276,9 @@ def main():
     # load and build features
     df = load_weekly_data()
     feats = build_features(df)
+    
+    # Add division and conference features
+    feats = add_division_features(feats)
 
     # only completed games for training/eval
     labeled = feats[feats["home_score"].notna()].copy()
