@@ -1,6 +1,7 @@
 import pandas as pd
+import nflreadpy as nfl
 
-ROLLING_WINDOW = 5
+ROLLING_WINDOW = 4
 
 
 def build_features(df):
@@ -15,6 +16,14 @@ def build_features(df):
     data["home_win"] = (data["home_score"] > data["away_score"]).astype(int)
     data["margin"] = data["home_score"] - data["away_score"]
     data["total_pts"] = data["home_score"] + data["away_score"]
+
+    # divisional game indicator
+    teams_df = nfl.load_teams().to_pandas()
+    team_divisions = teams_df.set_index('team_abbr')['team_division'].to_dict()
+    home_division = data['home_team'].map(team_divisions)
+    away_division = data['away_team'].map(team_divisions)
+    data['is_division_game'] = (home_division == away_division).astype(int)
+
 
     home = data[
         ["game_id", "season", "week", "home_team", "home_score", "away_score"]
@@ -66,23 +75,47 @@ def build_features(df):
         .fillna(0)
     )
 
+    # SEASON-TO-DATE AVERAGE (new)
+    # Expanding window within each season (all games so far this season)
+    teams["off_season_avg"] = (
+        teams.groupby(["team", "season"])["pts_for"]
+        .shift(1)  # Don't include current game
+        .expanding()
+        .mean()
+        .reset_index(drop=True)
+        .fillna(0)
+    )
+
+    teams["def_season_avg"] = (
+        teams.groupby(["team", "season"])["pts_against"]
+        .shift(1)
+        .expanding()
+        .mean()
+        .reset_index(drop=True)
+        .fillna(0)
+    )
+
     home_feats = teams[
-        ["game_id", "team", "off_avg", "def_avg"]
+        ["game_id", "team", "off_avg", "def_avg", "off_season_avg", "def_season_avg"]
     ].rename(
         columns={
             "team": "home_team",
             "off_avg": "home_off_avg",
             "def_avg": "home_def_avg",
+            "off_season_avg": "home_off_season_avg",
+            "def_season_avg": "home_def_season_avg",
         }
     )
 
     away_feats = teams[
-        ["game_id", "team", "off_avg", "def_avg"]
+        ["game_id", "team", "off_avg", "def_avg", "off_season_avg", "def_season_avg"]
     ].rename(
         columns={
             "team": "away_team",
             "off_avg": "away_off_avg",
             "def_avg": "away_def_avg",
+            "off_season_avg": "away_off_season_avg",
+            "def_season_avg": "away_def_season_avg",
         }
     )
 

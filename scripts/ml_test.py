@@ -35,26 +35,17 @@ ML_FEATURES = [
     "away_off_avg",
     "home_def_avg",
     "away_def_avg",
+    "home_off_season_avg",    # NEW: Season-to-date
+    "away_off_season_avg",
+    "home_def_season_avg",
+    "away_def_season_avg",
     "is_division_game",
 ]
 
-
-def add_division_features(df):
-    """Add division game indicators to dataframe."""
-    # Load teams data and convert to pandas
-    teams_df = nfl.load_teams().to_pandas()
-    team_divisions = teams_df.set_index('team_abbr')['team_division'].to_dict()
-    
-    data = df.copy()
-    
-    # Add division/conference for each team
-    data['home_division'] = data['home_team'].map(team_divisions)
-    data['away_division'] = data['away_team'].map(team_divisions)
-    
-    # Create binary features
-    data['is_division_game'] = (data['home_division'] == data['away_division']).astype(int)
-    
-    return data
+# ---- Configuration ----
+MODELS_TO_RUN = ["logistic", "random_forest", "xgboost_tuned"]
+BET_THRESHOLD = 0.01  # Minimum edge to place bet
+SAVE_BETS = False
 
 
 def build_ml_X(df):
@@ -109,7 +100,6 @@ def tune_xgb_classifier(train_df, n_folds=4):
                     n_estimators=ne,
                     eval_metric="logloss",
                     random_state=42,
-                    use_label_encoder=False,
                     subsample=0.9,
                     colsample_bytree=0.9,
                 )
@@ -254,46 +244,29 @@ def evaluate_model(name, model, X_tr, y_tr, X_te, y_te, test_df, threshold=0.0):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Moneyline model test harness")
-    parser.add_argument(
-        "--models",
-        type=str,
-        default="all",
-        help="Comma-separated list of models to run: logistic,random_forest,xgboost_tuned or 'all'",
-    )
-    parser.add_argument(
-        "--threshold",
-        type=float,
-        default=0.0,
-        help="Minimum model-market edge to place bet (default 0.0)",
-    )
-    parser.add_argument("--save-bets", action="store_true", help="Save per-model bets to outputs/")
-    parser.add_argument("--list", action="store_true", help="List available models and exit")
-    args = parser.parse_args()
-
     print("\n==== MONEYLINE CLASSIFIER TEST ===\n")
+    print(f"Models to run: {', '.join(MODELS_TO_RUN)}")
+    print(f"Bet threshold: {BET_THRESHOLD}")
+    print(f"Save bets: {SAVE_BETS}\n")
 
-    # load and build features
+    # Load and build features
     df = load_weekly_data()
     feats = build_features(df)
-    
-    # Add division and conference features
-    feats = add_division_features(feats)
 
-    # only completed games for training/eval
+    # Only completed games for training/eval
     labeled = feats[feats["home_score"].notna()].copy()
     labeled = labeled[labeled['week'] > 8]
     labeled = labeled.sort_values(["season", "week", "game_id"]).reset_index(drop=True)
 
     if labeled.empty:
-        raise ValueError("no completed games found in data")
+        raise ValueError("No completed games found in data")
 
     # 80/20 chronologic split
     split_idx = int(0.8 * len(labeled))
     train_df = labeled.iloc[:split_idx].copy()
     test_df = labeled.iloc[split_idx:].copy()
 
-    print(f"train size: {len(train_df)} | test size: {len(test_df)}")
+    print(f"Train size: {len(train_df)} | Test size: {len(test_df)}\n")
 
     # Build matrices
     X_tr = build_ml_X(train_df)
@@ -301,74 +274,59 @@ def main():
     y_tr = train_df["home_win"].values
     y_te = test_df["home_win"].values
 
-    # Available model constructors (xgboost_tuned will be created after tuning)
+    # Available model constructors
     available = {
         "logistic": lambda: LogisticRegression(max_iter=2000),
         "random_forest": lambda: RandomForestClassifier(n_estimators=200, random_state=42),
         "xgboost_tuned": None,
     }
 
-    if args.list:
-        print("Available models:")
-        for k in available.keys():
-            print(f" - {k}")
-        print(
-            "\nTo implement a new model, add an entry to the `available` mapping. Example:\n    available['my_model'] = lambda: MyClassifier(param=1)\n"
-        )
-        return
-
-    # determine which models to run
-    if args.models.strip().lower() == "all":
-        selected = list(available.keys())
-    else:
-        selected = [m.strip() for m in args.models.split(",")]
-
-    # validate selection
-    for m in selected:
-        if m not in available:
-            print(f"Unknown model requested: {m}")
-            return
-
     models = []
 
-    # if xgboost_tuned is selected, tune first
-    if "xgboost_tuned" in selected:
-        print("tuning xgb moneyline classifier...")
+    # If xgboost_tuned is selected, tune first
+    if "xgboost_tuned" in MODELS_TO_RUN:
+        print("Tuning XGBoost classifier...")
         best_params_ml, best_cv_logloss = tune_xgb_classifier(train_df)
-        print(f"best cv logloss: {best_cv_logloss:.3f}")
-        print(f"best params: {best_params_ml}")
+        print(f"Best CV logloss: {best_cv_logloss:.3f}")
+        print(f"Best params: {best_params_ml}\n")
         available["xgboost_tuned"] = lambda: XGBClassifier(**best_params_ml)
 
-    for name in selected:
+    for name in MODELS_TO_RUN:
+        if name not in available:
+            print(f"Warning: Unknown model '{name}', skipping...")
+            continue
         models.append((name, available[name]()))
 
     results = []
     all_bets = {}
 
     for name, mdl in models:
-        print(f"\nEvaluating model: {name}")
-        res = evaluate_model(name, mdl, X_tr, y_tr, X_te, y_te, test_df, threshold=args.threshold)
+        print(f"Evaluating model: {name}")
+        res = evaluate_model(name, mdl, X_tr, y_tr, X_te, y_te, 
+                             test_df, threshold=BET_THRESHOLD)
         results.append(res)
         all_bets[name] = res.pop("bets_df")
         print(
-            f"Model {name} metrics: logloss={res['logloss']:.4f}, acc={res['accuracy']:.4f}, roc_auc={res['roc_auc']:.4f}"
+            f"  ML metrics: logloss={res['logloss']:.4f}, acc={res['accuracy']:.4f}, roc_auc={res['roc_auc']:.4f}"
         )
         print(
-            f"Betting: n_bets={res['n_bets']}, total_profit={res['total_profit']:.3f}, profit_weighted_accuracy={res['profit_weighted_accuracy']:.4f}"
+            f"  Betting: n_bets={res['n_bets']}, total_profit=${res['total_profit']:.2f}, "
+            f"win_rate={res['bet_win_rate']:.2%}, profit_weighted_acc={res['profit_weighted_accuracy']:.4f}\n"
         )
 
     # Summary dataframe
     summary = pd.DataFrame([{k: v for k, v in r.items() if k != "bets_df"} for r in results])
-    print("\n== Summary Results ==")
-    print(summary.set_index("name"))
+    print("\n=== SUMMARY RESULTS ===")
+    print(summary.set_index("name").to_string())
 
-    # optionally save per-model bets
-    if args.save_bets:
+    # Optionally save per-model bets
+    if SAVE_BETS:
+        os.makedirs("outputs", exist_ok=True)
         for name, bets_df in all_bets.items():
             if not bets_df.empty:
                 fname = f"outputs/bets_{name}.csv"
                 bets_df.to_csv(fname, index=False)
-                print(f"Saved bets for {name} to {fname}")
+                print(f"\nSaved bets for {name} to {fname}")
 
 
 if __name__ == "__main__":
