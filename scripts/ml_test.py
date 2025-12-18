@@ -27,7 +27,7 @@ from sklearn.metrics import log_loss, accuracy_score, roc_auc_score
 import nflreadpy as nfl
 import pandas as pd
 import numpy as np
-
+from sklearn.preprocessing import PolynomialFeatures
 
 # ---- Feature set ----
 ML_FEATURES = [
@@ -40,13 +40,14 @@ ML_FEATURES = [
     "home_def_season_avg",
     "away_def_season_avg",
     "is_division_game",
+    #"home_moneyline"
 ]
 
 # ---- Configuration ----
 MODELS_TO_RUN = ["logistic", "random_forest", "xgboost_tuned"]
 BET_THRESHOLD = 0.01  # Minimum edge to place bet
 SAVE_BETS = False
-
+WINNER_ONLY = False
 
 def build_ml_X(df):
     return df[ML_FEATURES].copy()
@@ -155,14 +156,21 @@ def simulate_bets(home_probs, test_df, threshold=0.0):
         implied_home = float(ml_conversion(row.get("home_moneyline", 0)))
         implied_away = float(ml_conversion(row.get("away_moneyline", 0)))
 
-        edge_home = model_home - implied_home
-        edge_away = (1 - model_home) - implied_away
+        edge_home = model_home #- implied_home
+        edge_away = (1 - model_home) #- implied_away
 
         bet_side = None
-        if edge_home > threshold and edge_home >= edge_away:
-            bet_side = "home"
-        elif edge_away > threshold and edge_away > edge_home:
-            bet_side = "away"
+
+        if WINNER_ONLY:
+            if edge_home > 0.5 and edge_home >= edge_away:
+                bet_side = "home"
+            elif edge_away > 0.5 and edge_away > edge_home:
+                bet_side = "away"
+        else:
+            if edge_home > implied_home and edge_home >= edge_away:
+                bet_side = "home"
+            elif edge_away > implied_away and edge_away > edge_home:
+                bet_side = "away"
 
         if bet_side is None:
             continue
@@ -224,11 +232,30 @@ def simulate_bets(home_probs, test_df, threshold=0.0):
     }
 
 
-def evaluate_model(name, model, X_tr, y_tr, X_te, y_te, test_df, threshold=0.0):
-    model.fit(X_tr, y_tr)
+def evaluate_model(name, model, X_tr, y_tr, X_te, y_te, test_df, threshold=0.0, sample_weights = None):
+    
+    if sample_weights is not None:
+        model.fit(X_tr, y_tr, sample_weight=sample_weights)
+    else:
+        model.fit(X_tr, y_tr)
+    # maybe weight the samples based on profit won based on moneyline of team that won
     probs = model.predict_proba(X_te)[:, 1]
     ml_metrics = eval_ml_metrics(y_te, probs)
     bet_stats = simulate_bets(probs, test_df, threshold=threshold)
+
+    if name == "logistic":
+        coefficients = model.coef_[0]
+        odds_ratios = np.exp(coefficients)
+
+
+        # Display feature importance using coefficients and odds ratios
+        feature_importance = pd.DataFrame({
+            'Feature': X_tr.columns,
+            'Coefficient': coefficients,
+            'Odds Ratio': odds_ratios
+        })
+        print("\nFeature Importance (Coefficient and Odds Ratio):")
+        print(feature_importance.sort_values(by='Coefficient', ascending=False))
 
     result = {
         "name": name,
@@ -274,6 +301,35 @@ def main():
     y_tr = train_df["home_win"].values
     y_te = test_df["home_win"].values
 
+    # Weight samples by potential profit (bigger upsets = higher weight)
+    def calculate_profit_weight(row):
+        """Calculate how profitable correctly predicting this game would be."""
+        if row["home_win"] == 1:
+            # Home team won - profit from betting on home
+            ml = row.get("home_moneyline", 0)
+        else:
+            # Away team won - profit from betting on away
+            ml = row.get("away_moneyline", 0)
+        
+        # Calculate profit per $1 bet
+        profit = payout_profit_per_dollar(ml)
+        if profit is None or profit <= 0:
+            return 1.0  # Default weight for invalid odds
+        
+        # Weight = 1 + profit (so bigger upsets get more weight)
+        # A +300 underdog win gets weight of 4.0, favorite at -200 gets weight of 1.5
+        return 1.0 + profit
+    
+    profit_weights = train_df.apply(calculate_profit_weight, axis=1).values
+    profit_weights = profit_weights / profit_weights.mean()  # Normalize to mean=1
+    
+    print(f"\nSample weight stats (profit-based):")
+    print(f"  Min weight: {profit_weights.min():.2f}")
+    print(f"  Max weight: {profit_weights.max():.2f}")
+    print(f"  Mean weight: {profit_weights.mean():.2f}")
+    print(f"  Median weight: {np.median(profit_weights):.2f}")
+    print()
+
     # Available model constructors
     available = {
         "logistic": lambda: LogisticRegression(max_iter=2000),
@@ -303,7 +359,7 @@ def main():
     for name, mdl in models:
         print(f"Evaluating model: {name}")
         res = evaluate_model(name, mdl, X_tr, y_tr, X_te, y_te, 
-                             test_df, threshold=BET_THRESHOLD)
+                             test_df, threshold=BET_THRESHOLD, sample_weights=profit_weights)
         results.append(res)
         all_bets[name] = res.pop("bets_df")
         print(

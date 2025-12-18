@@ -27,22 +27,43 @@ def ml_conversion(moneyline):
     else:
         return 0.5
 
+# Weight samples by potential profit (bigger upsets = higher weight)
+def calculate_profit_weight(row):
+    """Calculate how profitable correctly predicting this game would be."""
+    if row["home_win"] == 1:
+        # Home team won - profit from betting on home
+        ml = row.get("home_moneyline", 0)
+    else:
+        # Away team won - profit from betting on away
+        ml = row.get("away_moneyline", 0)
+    
+    # Calculate profit per $1 bet
+    profit = ml_conversion(ml)
+    if profit is None or profit <= 0:
+        return 1.0  # Default weight for invalid odds
+    
+    # Weight = 1 + profit (so bigger upsets get more weight)
+    # A +300 underdog win gets weight of 4.0, favorite at -200 gets weight of 1.5
+    return 1.0 + profit
+
 class Moneyline:
     def __init__(self):
         
-        '''self.model = XGBClassifier(
+        self.model = XGBClassifier(
             n_estimators=100,
-            eval_metric='logloss'
+            eval_metric='logloss',
             max_depth=3,
             learning_rate=0.03,
-            eval_metric='logloss',
             random_state=42
-        )'''
+            )
         
-        self.model = LogisticRegression(max_iter=2000)
+        #self.model = LogisticRegression(max_iter=2000)
 
     def train(self, df):
-        self.model.fit(df[FEATURES], df["home_win"])
+        profit_weights = df.apply(calculate_profit_weight, axis=1).values
+        profit_weights = profit_weights / profit_weights.mean()  # Normalize to mean=1
+
+        self.model.fit(df[FEATURES], df["home_win"], sample_weight=profit_weights)
 
     def predict(self, df):
         X = df[FEATURES]

@@ -12,7 +12,7 @@ from controllers.predict import run_weekly
 
 
 def main():
-    run_weekly(week = 15)
+    run_weekly(week = 16)
 
 
 if __name__ == "__main__":

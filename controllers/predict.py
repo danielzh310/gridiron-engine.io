@@ -64,6 +64,7 @@ def run_weekly(season=2025, week=14):
     pretty = results.rename(columns={
         "moneyline_pick": "ml_pick",
         "home_win_prob": "ml_home_prob",
+        "away_win_prob": "ml_away_prob",
         "predicted_margin": "model_spread_margin",
         "predicted_total": "projected_total",
         "total_edge": "vegas_total_edge",
@@ -71,6 +72,7 @@ def run_weekly(season=2025, week=14):
 
     round_cols = [
         "ml_home_prob",
+        "ml_away_prob",
         "model_spread_margin",
         "spread_edge",
         "projected_total",
@@ -89,6 +91,7 @@ def run_weekly(season=2025, week=14):
 
         "ml_pick",
         "ml_home_prob",
+        "ml_away_prob",
         "home_ml_bet",
         "away_ml_bet",
         "home_moneyline",
