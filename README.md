@@ -6,13 +6,6 @@
 
 ---
 
-## Authors  
-- Daniel Z.  
-- Mehul P.  
-- Cody L.  
-
----
-
 ## Project Overview  
 The NFL Parlay Picker leverages game, player, and play-by-play data to explore predictive signals in NFL matchups.  
 By clustering and modeling historical trends, the project seeks to forecast game outcomes and evaluate how data-driven insights can inform parlay-style predictions, purely for research and analytics purposes.
