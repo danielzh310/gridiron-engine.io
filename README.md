@@ -26,7 +26,7 @@ Build a predictive model to forecast NFL outcomes, including:
 
 ### Expected Output  
 A model that generates weekly predictions for each NFL game, producing suggested (non-financial) outcomes for:  
-- Money lines  
+- Moneylines  
 - Over/under totals  
 - Point spreads  
 
