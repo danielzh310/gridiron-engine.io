@@ -49,15 +49,15 @@ def calculate_profit_weight(row):
 class Moneyline:
     def __init__(self):
         
-        self.model = XGBClassifier(
-            n_estimators=100,
-            eval_metric='logloss',
-            max_depth=3,
-            learning_rate=0.03,
-            random_state=42
-            )
+        # self.model = XGBClassifier(
+        #     n_estimators=100,
+        #     eval_metric='logloss',
+        #     max_depth=3,
+        #     learning_rate=0.03,
+        #     random_state=42
+        #     )
         
-        #self.model = LogisticRegression(max_iter=2000)
+        self.model = LogisticRegression(max_iter=2000)
 
     def train(self, df):
         profit_weights = df.apply(calculate_profit_weight, axis=1).values
