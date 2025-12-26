@@ -105,7 +105,7 @@ if run:
     else:
         selected = st.session_state.get("selected_cols", default_on)
         if not selected:
-            st.warning("No columns selected — showing defaults.")
+            st.warning("No columns selected, showing defaults.")
             selected = default_on.copy()
 
         selected = [c for c in ordered_cols if c in set(selected)]
