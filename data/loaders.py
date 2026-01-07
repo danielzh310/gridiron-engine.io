@@ -5,8 +5,6 @@ def load_weekly_data(seasons=None):
     """
     Load NFL schedules for all historical seasons plus the current season
     so that both training games and upcoming games are included.
-    
-    Note: For the presentation, we will need to go back to Week 13
     """
 
     if seasons is None:
@@ -14,6 +12,14 @@ def load_weekly_data(seasons=None):
         seasons = list(range(2022, current_season + 1))
 
     schedules = nfl.load_schedules(seasons=seasons)
+
+    if "season_type" in schedules.columns:
+        schedules = schedules.with_columns(
+            nfl.pl.when(nfl.pl.col("season_type") == "POST")
+            .then(nfl.pl.col("week") + 18)
+            .otherwise(nfl.pl.col("week"))
+            .alias("week")
+        )
 
     keep = [
         "game_id",
