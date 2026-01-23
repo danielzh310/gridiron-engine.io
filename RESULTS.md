@@ -1,5 +1,5 @@
 
-## Results and Model Performance
+## Results and Model Performance (2025)
 
 All stakes are model generated fractional Kelly stakes.
 Games marked NO BET indicate no wager was placed.
@@ -24,7 +24,7 @@ Games marked NO BET indicate no wager was placed.
 | PIT vs BAL | PIT    |      4.85 | PIT won |   11.40 |
 | SEA vs ATL | ATL    |     11.02 | SEA won |  -11.02 |
 
-**Week 14 Net:** **99.71**
+**Week 14 Net:** **$99.71**
 
 ---
 
@@ -49,7 +49,7 @@ Games marked NO BET indicate no wager was placed.
 | DAL vs MIN | NO BET |      0.00 | MIN won |    0.00 |
 | PIT vs MIA | MIA    |      9.81 | PIT won |   -9.81 |
 
-**Week 15 Net:** **14.28**
+**Week 15 Net:** **$14.28**
 
 ---
 
@@ -74,7 +74,7 @@ Games marked NO BET indicate no wager was placed.
 | MIA vs CIN | MIA  |     39.55 | CIN won |  -39.55 |
 | IND vs SF  | SF   |      5.68 | SF won  |    2.27 |
 
-**Week 16 Net:** **58.16**
+**Week 16 Net:** **$58.16**
 
 ---
 
@@ -99,7 +99,7 @@ Games marked NO BET indicate no wager was placed.
 | SF vs CHI  | SF     |      0.00 | SF won  |   11.88 |
 | ATL vs LAR | ATL    |      4.14 | ATL won |   14.51 |
 
-**Week 17 Net:** **43.63**
+**Week 17 Net:** **$43.63**
 
 ---
 
@@ -124,7 +124,7 @@ Games marked NO BET indicate no wager was placed.
 | SF vs SEA  | SF     |     20.67 | SEA won |  -20.67 |
 | TB vs CAR  | NO BET |      0.00 | TB won  |    0.00 |
 
-**Week 18 Net:** **5.37**
+**Week 18 Net:** **$5.37**
 
 ---
 
@@ -132,4 +132,4 @@ Games marked NO BET indicate no wager was placed.
 
 | Weeks    | Net Profit ($) |
 | -------- | -------------: |
-| 14 to 18 |     **221.15** |
+| 14 to 18 |     **$221.15** |
