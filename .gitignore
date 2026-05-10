@@ -1,12 +1,10 @@
 # Python cache
 __pycache__/
 *.pyc
+__init__.py
 
 # Generated outputs
 outputs/*.csv
-
-# EDA visuals
-eda/figures/*.png
 
 # OS noise
 .DS_Store
