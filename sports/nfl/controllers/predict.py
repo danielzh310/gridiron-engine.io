@@ -13,15 +13,18 @@ DEFAULT_OUTPUT_PATH = REPO_ROOT / "outputs" / "nfl_weekly_picks.csv"
 
 
 def run_weekly(
-    season=2025,
+    season=2026,
     week=16,
+    seasons=None,
     export=True,
     output_path=None,
     verbose=True,
 ):
     if verbose:
         print("Loading football data...")
-    df = load_weekly_data()
+    if seasons is None and season is not None:
+        seasons = list(range(2022, int(season) + 1))
+    df = load_weekly_data(seasons=seasons)
 
     if verbose:
         print("Building rolling features...")
@@ -32,6 +35,7 @@ def run_weekly(
             (feats["season"] < season) |
             ((feats["season"] == season) & (feats["week"] < week))
         ].copy()
+        train_df = train_df[train_df["home_score"].notna()].copy()
 
         predict_df = feats[
             (feats["season"] == season) &
@@ -69,7 +73,9 @@ def run_weekly(
 
     if verbose:
         print("Merging outputs...")
-    base = predict_df[["game_id", "home_team", "away_team"]].drop_duplicates("game_id")
+    base = predict_df[
+        ["game_id", "home_team", "away_team", "spread_line", "total_line"]
+    ].drop_duplicates("game_id")
 
     results = base.merge(ml_preds, on="game_id")
     results = results.merge(sp_preds, on="game_id")
@@ -114,10 +120,12 @@ def run_weekly(
         "home_moneyline",
         "away_moneyline",
 
+        "spread_line",
         "spread_pick",
         "model_spread_margin",
         "spread_edge",
 
+        "total_line",
         "total_pick",
         "projected_total",
         "vegas_total_edge",
