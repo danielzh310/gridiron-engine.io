@@ -3,6 +3,12 @@ from sklearn.linear_model import LogisticRegression
 import nflreadpy as nfl
 import pandas as pd
 
+from utils.betting import (
+    american_to_implied_probability,
+    has_positive_edge,
+    payout_profit_per_dollar,
+)
+
 FEATURES = [
     "home_off_avg",
     "away_off_avg",
@@ -15,17 +21,7 @@ FEATURES = [
     "is_division_game",
 ]
 
-# Buffer % whether to make the bet
-threshold = 0.01
-
-def ml_conversion(moneyline):
-    """Convert moneyline to implied probability"""
-    if moneyline > 0:
-        return 100 / (100 + moneyline)
-    elif moneyline < 0:
-        return abs(moneyline) / (abs(moneyline) + 100)
-    else:
-        return 0.5
+EDGE_THRESHOLD = 0.01
 
 # Weight samples by potential profit (bigger upsets = higher weight)
 def calculate_profit_weight(row):
@@ -37,9 +33,9 @@ def calculate_profit_weight(row):
         # Away team won - profit from betting on away
         ml = row.get("away_moneyline", 0)
     
-    # Calculate profit per $1 bet
-    profit = ml_conversion(ml)
-    if profit is None or profit <= 0:
+    try:
+        profit = payout_profit_per_dollar(ml)
+    except (TypeError, ValueError):
         return 1.0  # Default weight for invalid odds
     
     # Weight = 1 + profit (so bigger upsets get more weight)
@@ -73,15 +69,21 @@ class Moneyline:
         away_probs = probs[:, 0]
 
         # Convert Vegas odds to probabilities
-        home_ml_probs = df['home_moneyline'].apply(ml_conversion)
-        away_ml_probs = df['away_moneyline'].apply(ml_conversion)
+        home_ml_probs = df['home_moneyline'].apply(american_to_implied_probability)
+        away_ml_probs = df['away_moneyline'].apply(american_to_implied_probability)
 
         # Pick winner - convert to Series first
         picks = pd.Series(home_probs > 0.5).map({True: "HOME", False: "AWAY"})
 
         # Determine if there's betting edge - convert to Series first
-        home_ml_bet = pd.Series(threshold > (home_ml_probs.values - home_probs)).map({True: "Bet", False: "No Bet"})
-        away_ml_bet = pd.Series(threshold > (away_ml_probs.values - away_probs)).map({True: "Bet", False: "No Bet"})
+        home_ml_bet = pd.Series(
+            has_positive_edge(prob, odds, EDGE_THRESHOLD)
+            for prob, odds in zip(home_probs, df["home_moneyline"])
+        ).map({True: "Bet", False: "No Bet"})
+        away_ml_bet = pd.Series(
+            has_positive_edge(prob, odds, EDGE_THRESHOLD)
+            for prob, odds in zip(away_probs, df["away_moneyline"])
+        ).map({True: "Bet", False: "No Bet"})
 
         return pd.DataFrame({
             "game_id": df["game_id"].values,

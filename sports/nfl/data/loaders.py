@@ -3,7 +3,7 @@ import nflreadpy as nfl
 
 def load_weekly_data(seasons=None):
     """
-    Load NFL schedules for all historical seasons plus the current season
+    Load football schedules for all historical seasons plus the current season
     so that both training games and upcoming games are included.
     """
 

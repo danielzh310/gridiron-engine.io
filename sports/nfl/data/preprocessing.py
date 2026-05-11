@@ -6,7 +6,7 @@ ROLLING_WINDOW = 4
 
 def build_features(df):
     """
-    Build rolling offensive and defensive team features for modeling 
+    Build rolling offensive and defensive team features for football modeling
     moneyline, spread, and totals.
     """
 

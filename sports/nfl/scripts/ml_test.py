@@ -5,20 +5,21 @@ Loads weekly data, builds rolling features, creates a train/test
 split, evaluates multiple models (logistic, random forest, tuned XGBoost),
 and computes betting-weighted profit metrics.
 
-Run as: `python scripts/ml_test.py --models logistic,xgboost_tuned --threshold 0.02 --save-bets`
+Run as: `python sports/nfl/scripts/ml_test.py --models logistic,xgboost_tuned --threshold 0.02 --save-bets`
 """
 
-import os
 import sys
 import argparse
+from pathlib import Path
 
-# Ensure the repository root is on sys.path so `data` imports work
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if ROOT not in sys.path:
-    sys.path.insert(0, ROOT)
+# Ensure the repository root is on sys.path so `sports` imports work.
+ROOT = Path(__file__).resolve().parents[3]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-from data.loaders import load_weekly_data
-from data.preprocessing import build_features
+from sports.nfl.data.loaders import load_weekly_data
+from sports.nfl.data.preprocessing import build_features
+from utils.betting import american_to_implied_probability, payout_profit_per_dollar
 
 from xgboost import XGBClassifier
 from sklearn.linear_model import LogisticRegression
@@ -51,20 +52,6 @@ WINNER_ONLY = False
 
 def build_ml_X(df):
     return df[ML_FEATURES].copy()
-
-
-def ml_conversion(moneyline):
-    """Convert vegas moneyline to implied probability."""
-    try:
-        ml = float(moneyline)
-    except Exception:
-        return 0.5
-    if ml > 0:
-        return 100.0 / (100.0 + ml)
-    elif ml < 0:
-        return abs(ml) / (abs(ml) + 100.0)
-    else:
-        return 0.5
 
 
 def rolling_splits(n, n_folds=5):
@@ -132,18 +119,6 @@ def eval_ml_metrics(y_true, prob_home):
     }
 
 
-def payout_profit_per_dollar(moneyline):
-    """Return net profit per $1 stake when bet wins (not including stake)."""
-    try:
-        ml = float(moneyline)
-    except Exception:
-        return None
-    if ml > 0:
-        return ml / 100.0
-    else:
-        return 100.0 / abs(ml)
-
-
 def simulate_bets(home_probs, test_df, threshold=0.0):
     """Simulate $1 bets where model has edge over implied odds.
 
@@ -153,8 +128,8 @@ def simulate_bets(home_probs, test_df, threshold=0.0):
     bets = []
     for i, row in test_df.reset_index(drop=True).iterrows():
         model_home = float(home_probs[i])
-        implied_home = float(ml_conversion(row.get("home_moneyline", 0)))
-        implied_away = float(ml_conversion(row.get("away_moneyline", 0)))
+        implied_home = float(american_to_implied_probability(row.get("home_moneyline", 0)))
+        implied_away = float(american_to_implied_probability(row.get("away_moneyline", 0)))
 
         edge_home = model_home #- implied_home
         edge_away = (1 - model_home) #- implied_away
@@ -184,8 +159,9 @@ def simulate_bets(home_probs, test_df, threshold=0.0):
             win = 1 if row.get("home_win") == 0 else 0
             edge = edge_away
 
-        p_win_profit = payout_profit_per_dollar(ml)
-        if p_win_profit is None:
+        try:
+            p_win_profit = payout_profit_per_dollar(ml)
+        except (TypeError, ValueError):
             continue
 
         profit = p_win_profit if win else -1.0
@@ -312,8 +288,9 @@ def main():
             ml = row.get("away_moneyline", 0)
         
         # Calculate profit per $1 bet
-        profit = payout_profit_per_dollar(ml)
-        if profit is None or profit <= 0:
+        try:
+            profit = payout_profit_per_dollar(ml)
+        except (TypeError, ValueError):
             return 1.0  # Default weight for invalid odds
         
         # Weight = 1 + profit (so bigger upsets get more weight)
@@ -377,10 +354,10 @@ def main():
 
     # Optionally save per-model bets
     if SAVE_BETS:
-        os.makedirs("outputs", exist_ok=True)
+        (ROOT / "outputs").mkdir(exist_ok=True)
         for name, bets_df in all_bets.items():
             if not bets_df.empty:
-                fname = f"outputs/bets_{name}.csv"
+                fname = ROOT / "outputs" / f"nfl_bets_{name}.csv"
                 bets_df.to_csv(fname, index=False)
                 print(f"\nSaved bets for {name} to {fname}")
 

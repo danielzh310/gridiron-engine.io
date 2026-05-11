@@ -13,7 +13,7 @@ EDGE_BUFFER = 2.0
 
 class Total:
     """
-    Gradient-boosted regression model for NFL over/under totals
+    Gradient-boosted regression model for football over/under totals
     with bias correction and confidence-based betting.
     """
 

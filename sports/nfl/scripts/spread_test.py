@@ -1,6 +1,13 @@
-from data.loaders import load_weekly_data
-from data.preprocessing import build_features
-from models.spread import Spread, FEATURES
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[3]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from sports.nfl.data.loaders import load_weekly_data
+from sports.nfl.data.preprocessing import build_features
+from sports.nfl.models.spread import Spread, FEATURES
 
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.ensemble import HistGradientBoostingRegressor

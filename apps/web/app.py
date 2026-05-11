@@ -4,12 +4,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import streamlit as st
-from controllers.predict import run_weekly
+from sports.nfl.controllers.predict import run_weekly
 
 from utils.kelly import allocate_kelly
 
-st.set_page_config(page_title="Gridiron Engine", layout="wide")
-st.title("gridiron-engine.io")
+st.set_page_config(page_title="QuantPlay", layout="wide")
+st.title("quantplay.io")
 
 col1, col2 = st.columns([1, 1])
 with col1:
@@ -208,6 +208,6 @@ if run:
             st.download_button(
                 "Download displayed CSV",
                 data=csv_bytes,
-                file_name=f"weekly_picks_{int(season)}_wk{int(week)}.csv",
+                file_name=f"nfl_weekly_picks_{int(season)}_wk{int(week)}.csv",
                 mime="text/csv",
             )

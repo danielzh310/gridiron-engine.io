@@ -1,15 +1,15 @@
 from pathlib import Path
 
-from data.loaders import load_weekly_data
-from data.preprocessing import build_features
+from sports.nfl.data.loaders import load_weekly_data
+from sports.nfl.data.preprocessing import build_features
 
-from models.moneyline import Moneyline
-from models.spread import Spread
-from models.total import Total
+from sports.nfl.models.moneyline import Moneyline
+from sports.nfl.models.spread import Spread
+from sports.nfl.models.total import Total
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT_PATH = REPO_ROOT / "outputs" / "weekly_picks.csv"
+REPO_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_OUTPUT_PATH = REPO_ROOT / "outputs" / "nfl_weekly_picks.csv"
 
 
 def run_weekly(
@@ -20,7 +20,7 @@ def run_weekly(
     verbose=True,
 ):
     if verbose:
-        print("Loading NFL data...")
+        print("Loading football data...")
     df = load_weekly_data()
 
     if verbose:
@@ -45,7 +45,7 @@ def run_weekly(
         print(f"Training on {len(train_df)} completed games")
 
     if predict_df.empty:
-        print("You suck at coding")
+        print("No games found for that season/week.")
         return None
 
     if verbose:

@@ -1,5 +1,5 @@
 """
-Main entrypoint for the NFL Parlay Picker
+Main entrypoint for QuantPlay model predictions.
 
 Runs the prediction pipeline:
 - loads data
@@ -8,11 +8,11 @@ Runs the prediction pipeline:
 - exports picks
 """
 
-from controllers.predict import run_weekly
+from sports.nfl.controllers.predict import run_weekly
 
 
 def main():
-    run_weekly(week = 17)
+    run_weekly(week=17)
 
 
 if __name__ == "__main__":
