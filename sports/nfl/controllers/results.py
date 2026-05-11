@@ -40,24 +40,6 @@ def _moneyline_result(row):
     return "PUSH"
 
 
-def _spread_result(row):
-    edge = (row["home_score"] - row["away_score"]) - row["spread_line"]
-    if edge > 0:
-        return "HOME"
-    if edge < 0:
-        return "AWAY"
-    return "PUSH"
-
-
-def _total_result(row):
-    actual_total = row["home_score"] + row["away_score"]
-    if actual_total > row["total_line"]:
-        return "OVER"
-    if actual_total < row["total_line"]:
-        return "UNDER"
-    return "PUSH"
-
-
 def _moneyline_net(row):
     stake = float(row.get("kelly_stake_ml", 0.0) or 0.0)
     if stake <= 0 or row["ml_result"] == "PUSH":
@@ -86,10 +68,6 @@ def grade_saved_predictions(season: int, week: int):
         }
 
     actual_cols = ["game_id", "home_score", "away_score"]
-    if "spread_line" not in predictions.columns:
-        actual_cols.append("spread_line")
-    if "total_line" not in predictions.columns:
-        actual_cols.append("total_line")
     graded = predictions.merge(actuals[actual_cols], on="game_id", how="left")
     graded = graded[graded["home_score"].notna() & graded["away_score"].notna()].copy()
 
@@ -100,26 +78,15 @@ def grade_saved_predictions(season: int, week: int):
         }
 
     graded["actual_margin"] = graded["home_score"] - graded["away_score"]
-    graded["actual_total"] = graded["home_score"] + graded["away_score"]
     graded["ml_result"] = graded.apply(_moneyline_result, axis=1)
-    graded["spread_result"] = graded.apply(_spread_result, axis=1)
-    graded["total_result"] = graded.apply(_total_result, axis=1)
 
     graded["ml_hit"] = graded["ml_pick"] == graded["ml_result"]
-    graded["spread_hit"] = graded["spread_pick"] == graded["spread_result"]
-    graded["total_hit"] = graded["total_pick"] == graded["total_result"]
-    graded.loc[graded["total_pick"] == "PASS", "total_hit"] = False
-
     graded["ml_net"] = graded.apply(_moneyline_net, axis=1).round(2)
 
     summary = {
         "games_completed": int(len(graded)),
         "ml_hits": int(graded["ml_hit"].sum()),
         "ml_accuracy": float(graded["ml_hit"].mean()),
-        "spread_hits": int(graded["spread_hit"].sum()),
-        "spread_accuracy": float(graded["spread_hit"].mean()),
-        "total_bets": int((graded["total_pick"] != "PASS").sum()),
-        "total_hits": int((graded["total_hit"] & (graded["total_pick"] != "PASS")).sum()),
         "ml_net": float(graded["ml_net"].sum().round(2)),
     }
 

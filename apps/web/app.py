@@ -244,14 +244,10 @@ if check_results:
                 st.warning(summary["message"])
             else:
                 st.success(summary["message"])
-                m1, m2, m3, m4 = st.columns(4)
+                m1, m2, m3 = st.columns(3)
                 m1.metric("Completed games", summary["games_completed"])
                 m2.metric("ML hits", f'{summary["ml_hits"]}/{summary["games_completed"]}')
-                m3.metric("Spread hits", f'{summary["spread_hits"]}/{summary["games_completed"]}')
-                m4.metric("ML net", f'${summary["ml_net"]:.2f}')
-
-                if summary["total_bets"] > 0:
-                    st.metric("Total hits", f'{summary["total_hits"]}/{summary["total_bets"]}')
+                m3.metric("ML net", f'${summary["ml_net"]:.2f}')
 
                 result_cols = [
                     "game_id",
@@ -262,15 +258,8 @@ if check_results:
                     "ml_hit",
                     "kelly_stake_ml",
                     "ml_net",
-                    "spread_pick",
-                    "spread_result",
-                    "spread_hit",
-                    "total_pick",
-                    "total_result",
-                    "total_hit",
                     "home_score",
                     "away_score",
-                    "actual_total",
                 ]
                 result_cols = [c for c in result_cols if c in graded.columns]
                 st.dataframe(graded[result_cols], use_container_width=True)
