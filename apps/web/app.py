@@ -19,7 +19,7 @@ st.title("quantplay.io")
 col1, col2 = st.columns([1, 1])
 with col1:
     seasons = list(range(2020, 2031))
-    season = st.selectbox("Season", options=seasons, index=seasons.index(2025))
+    season = st.selectbox("Season", options=seasons, index=seasons.index(2026))
 with col2:
     week_labels = (
         ["Select week..."]
